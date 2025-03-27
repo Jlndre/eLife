@@ -5,6 +5,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
+import { Drawer } from 'expo-router/drawer';
 
 import { useColorScheme } from '@/hooks/useColorScheme';
 
@@ -28,12 +29,21 @@ export default function RootLayout() {
   }
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="+not-found" />
-      </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+    <Drawer
+      screenOptions={{
+        headerShown: false,
+        // You can style the drawer here. E.g.:
+        drawerType: 'front', // or 'slide', 'back', etc.
+        drawerStyle: { width: 250 },
+      }}
+    >
+      {/* Inside the Drawer, we place our (drawer) layout */}
+      <Drawer.Screen
+        name="(drawer)"
+        options={{
+          drawerLabel: 'Main Menu', // or hide if you want custom
+        }}
+      />
+    </Drawer>
   );
 }
