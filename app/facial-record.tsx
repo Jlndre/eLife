@@ -8,304 +8,534 @@ import {
   SafeAreaView,
   StatusBar,
   Alert,
+  Image,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { Camera } from "expo-camera";
-import * as FaceDetector from "expo-face-detector";
-import * as Speech from "expo-speech";
-import { Audio } from "expo-av";
 import { Ionicons, FontAwesome5, MaterialIcons } from "@expo/vector-icons";
-import Svg, { Path } from "react-native-svg";
+import Svg, { Rect } from "react-native-svg";
+import * as Speech from "expo-speech";
+import { Camera } from "expo-camera";
+import { CameraType } from "expo-image-picker";
 
 const { width, height } = Dimensions.get("window");
 
-const FacialRecognitionScreen = () => {
-  const router = useRouter();
+// API service interfaces
+interface VerificationResult {
+  success: boolean;
+  confidence?: number;
+  message?: string;
+}
+
+interface ApiServiceResponse {
+  success: boolean;
+  data?: any;
+  error?: string;
+}
+
+// Custom hook for camera operations
+const useCamera = () => {
+  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
+  const [isCameraReady, setIsCameraReady] = useState(false);
   const cameraRef = useRef<Camera | null>(null);
-  const [recognitionStep, setRecognitionStep] = useState<
-    "initial" | "countdown" | "recording" | "processing" | "complete"
-  >("initial");
-  const [countdown, setCountdown] = useState<number>(3);
-  const [livenessPhrase, setLivenessPhrase] = useState<string>(
-    "My name is John and I am alive"
-  );
-  const [hasCameraPermission, setHasCameraPermission] = useState<
-    boolean | null
-  >(null);
-  const [hasAudioPermission, setHasAudioPermission] = useState<boolean | null>(
-    null
-  );
-  const [recording, setRecording] = useState<Audio.Recording | null>(null);
 
-  // Detection states
-  const [faceDetected, setFaceDetected] = useState<boolean>(false);
-  const [speechDetected, setSpeechDetected] = useState<boolean>(false);
-  const [livenessConfirmed, setLivenessConfirmed] = useState<boolean>(false);
-  const [faceData, setFaceData] = useState<any>(null);
-
-  // Request permissions on component mount
   useEffect(() => {
     (async () => {
-      const cameraPermission = await Camera.requestCameraPermissionsAsync();
-      setHasCameraPermission(cameraPermission.status === "granted");
-
-      // Request audio recording permission for speech
-      const audioPermission = await Audio.requestPermissionsAsync();
-      setHasAudioPermission(audioPermission.status === "granted");
+      const { status } = await Camera.requestCameraPermissionsAsync();
+      setHasPermission(status === "granted");
     })();
   }, []);
 
-  // Handle countdown for recording
+  const takePicture = async () => {
+    if (cameraRef.current && isCameraReady) {
+      try {
+        const photo = await cameraRef.current.takePictureAsync({
+          quality: 0.8,
+          base64: true,
+          skipProcessing: false,
+        });
+        return photo;
+      } catch (error) {
+        console.error("Error taking picture:", error);
+        return null;
+      }
+    }
+    return null;
+  };
+
+  return {
+    hasPermission,
+    cameraRef,
+    isCameraReady,
+    setIsCameraReady,
+    takePicture,
+  };
+};
+
+// API service for verification
+const useVerificationService = () => {
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  // Face detection API service
+  const detectFace = async (imageData: string): Promise<ApiServiceResponse> => {
+    setIsProcessing(true);
+    try {
+      // Simulate API call with a delay
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      // PLACEHOLDER: Replace with actual API call
+      // const response = await fetch('https://your-face-detection-api.com', {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify({ image: imageData }),
+      // });
+      // const data = await response.json();
+
+      // Simulated successful response
+      return {
+        success: true,
+        data: {
+          hasFace: true,
+          bbox: [50, 50, 200, 200],
+          confidence: 0.95,
+        },
+      };
+    } catch (error) {
+      console.error("Face detection API error:", error);
+      return {
+        success: false,
+        error: "Face detection service unavailable",
+      };
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // Face matching API service
+  const matchFace = async (
+    imageData: string,
+    userId: string
+  ): Promise<ApiServiceResponse> => {
+    setIsProcessing(true);
+    try {
+      // Simulate API call with a delay
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+
+      // PLACEHOLDER: Replace with actual API call
+      // const response = await fetch('https://your-face-matching-api.com', {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify({ image: imageData, userId }),
+      // });
+      // const data = await response.json();
+
+      // Simulated successful response
+      return {
+        success: true,
+        data: {
+          matched: true,
+          confidence: 0.92,
+        },
+      };
+    } catch (error) {
+      console.error("Face matching API error:", error);
+      return {
+        success: false,
+        error: "Face matching service unavailable",
+      };
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // Liveness detection API service
+  const checkLiveness = async (
+    imageData: string
+  ): Promise<ApiServiceResponse> => {
+    setIsProcessing(true);
+    try {
+      // Simulate API call with a delay
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
+      // PLACEHOLDER: Replace with actual API call
+      // const response = await fetch('https://your-liveness-detection-api.com', {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify({ image: imageData }),
+      // });
+      // const data = await response.json();
+
+      // Simulated successful response
+      return {
+        success: true,
+        data: {
+          isLive: true,
+          score: 0.95,
+        },
+      };
+    } catch (error) {
+      console.error("Liveness detection API error:", error);
+      return {
+        success: false,
+        error: "Liveness detection service unavailable",
+      };
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // Deepfake detection API service
+  const checkDeepfake = async (
+    imageData: string
+  ): Promise<ApiServiceResponse> => {
+    setIsProcessing(true);
+    try {
+      // Simulate API call with a delay
+      await new Promise((resolve) => setTimeout(resolve, 1800));
+
+      // PLACEHOLDER: Replace with actual API call
+      // const response = await fetch('https://your-deepfake-detection-api.com', {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify({ image: imageData }),
+      // });
+      // const data = await response.json();
+
+      // Simulated successful response
+      return {
+        success: true,
+        data: {
+          isDeepfake: false,
+          confidence: 0.97,
+        },
+      };
+    } catch (error) {
+      console.error("Deepfake detection API error:", error);
+      return {
+        success: false,
+        error: "Deepfake detection service unavailable",
+      };
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // Speech verification API service
+  const verifySpeech = async (
+    audioData: string,
+    expectedPhrase: string
+  ): Promise<ApiServiceResponse> => {
+    setIsProcessing(true);
+    try {
+      // Simulate API call with a delay
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+
+      // PLACEHOLDER: Replace with actual API call
+      // const response = await fetch('https://your-speech-verification-api.com', {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify({ audio: audioData, phrase: expectedPhrase }),
+      // });
+      // const data = await response.json();
+
+      // Simulated successful response
+      return {
+        success: true,
+        data: {
+          matched: true,
+          confidence: 0.88,
+        },
+      };
+    } catch (error) {
+      console.error("Speech verification API error:", error);
+      return {
+        success: false,
+        error: "Speech verification service unavailable",
+      };
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  return {
+    isProcessing,
+    detectFace,
+    matchFace,
+    checkLiveness,
+    checkDeepfake,
+    verifySpeech,
+  };
+};
+
+// Custom hook for speech operations
+const useSpeech = () => {
+  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [audioData, setAudioData] = useState<string | null>(null);
+
+  useEffect(() => {
+    // For simplicity, assume permission is granted
+    // In a real app, you'd use expo-av's Audio.requestPermissionsAsync()
+    setHasPermission(true);
+  }, []);
+
+  const startRecording = async () => {
+    setIsRecording(true);
+    // PLACEHOLDER: In a real app, you would start recording audio here
+    // using something like expo-av's Audio.Recording
+
+    // Simulate audio recording
+    return true;
+  };
+
+  const stopRecording = async (): Promise<string | null> => {
+    setIsRecording(false);
+
+    // PLACEHOLDER: In a real app, you would stop recording and get the URI
+    // e.g., const uri = await recording.stopAndUnloadAsync();
+
+    // Simulate recording result
+    const simulatedBase64Audio = "simulated_base64_audio_data";
+    setAudioData(simulatedBase64Audio);
+    return simulatedBase64Audio;
+  };
+
+  return {
+    hasPermission,
+    isRecording,
+    audioData,
+    startRecording,
+    stopRecording,
+  };
+};
+
+const FacialRecognitionScreen = () => {
+  const router = useRouter();
+  const [verificationStep, setVerificationStep] = useState("initial"); // initial, countdown, capture, processing, complete, failed
+  const [countdown, setCountdown] = useState(3);
+  const [capturedImage, setCapturedImage] = useState<any>(null);
+  const [verificationResult, setVerificationResult] = useState<{
+    faceDetected: boolean;
+    faceMatched: boolean;
+    livenessConfirmed: boolean;
+    deepfakeDetected: boolean;
+    speechVerified: boolean;
+    overall: boolean;
+    message: string;
+  }>({
+    faceDetected: false,
+    faceMatched: false,
+    livenessConfirmed: false,
+    deepfakeDetected: false,
+    speechVerified: false,
+    overall: false,
+    message: "",
+  });
+  const [verificationPhrase, setVerificationPhrase] = useState(
+    "My voice is my passport, verify me"
+  );
+
+  // Use custom hooks
+  const {
+    hasPermission: cameraPermission,
+    cameraRef,
+    isCameraReady,
+    setIsCameraReady,
+    takePicture,
+  } = useCamera();
+
+  const {
+    hasPermission: audioPermission,
+    isRecording,
+    audioData,
+    startRecording,
+    stopRecording,
+  } = useSpeech();
+
+  const {
+    isProcessing,
+    detectFace,
+    matchFace,
+    checkLiveness,
+    checkDeepfake,
+    verifySpeech,
+  } = useVerificationService();
+
+  // Test user ID (in a real app, would be retrieved from authentication context)
+  const userId = "user123";
+
+  // Countdown effect
   useEffect(() => {
     let timer: NodeJS.Timeout;
-    if (recognitionStep === "countdown" && countdown > 0) {
+    if (verificationStep === "countdown" && countdown > 0) {
       timer = setTimeout(() => {
         setCountdown(countdown - 1);
       }, 1000);
-    } else if (recognitionStep === "countdown" && countdown === 0) {
-      setRecognitionStep("recording");
-      startRecording();
+    } else if (verificationStep === "countdown" && countdown === 0) {
+      startCapture();
     }
 
     return () => clearTimeout(timer);
-  }, [recognitionStep, countdown]);
+  }, [verificationStep, countdown]);
 
-  // Clean up when component unmounts
-  useEffect(() => {
-    return () => {
-      stopRecording();
-    };
-  }, []);
+  // Handle countdown complete
+  const startCapture = async () => {
+    setVerificationStep("capture");
 
-  const handleFacesDetected = ({ faces }: { faces: any[] }) => {
-    if (faces.length > 0) {
-      setFaceDetected(true);
-      setFaceData(faces[0]); // Store face data for further processing
+    // Start speech recording
+    const recordingStarted = await startRecording();
 
-      // Add logic for liveness detection here
-      // For example, checking for eye blinks, head movements
-      if (recognitionStep === "recording" && !livenessConfirmed) {
-        // Sample implementation - in reality, you'd have more sophisticated checks
-        if (
-          faces[0].leftEyeOpenProbability > 0.95 &&
-          faces[0].rightEyeOpenProbability < 0.1
-        ) {
-          // Detected a wink - could be part of liveness check
-          setTimeout(() => {
-            setLivenessConfirmed(true);
-          }, 500);
-        }
-      }
-    } else {
-      setFaceDetected(false);
+    // Speak the verification phrase
+    try {
+      await Speech.speak(verificationPhrase, {
+        language: "en",
+        pitch: 1,
+        rate: 0.8,
+      });
+    } catch (error) {
+      console.error("Speech error:", error);
     }
+
+    // Wait for 3 seconds, then capture image and audio
+    setTimeout(async () => {
+      const photo = await takePicture();
+      const audio = await stopRecording();
+
+      if (photo) {
+        setCapturedImage(photo);
+        setVerificationStep("processing");
+
+        // Start verification process
+        verifyUser(photo.base64, audio || "", userId);
+      } else {
+        Alert.alert("Error", "Failed to capture image. Please try again.");
+        setVerificationStep("initial");
+      }
+    }, 3000);
   };
 
-  const startRecording = async () => {
+  // Verification process
+  const verifyUser = async (
+    imageData: string,
+    audioData: string,
+    userId: string
+  ) => {
     try {
-      // Configure audio session for recording
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: true,
-        playsInSilentModeIOS: true,
-        shouldDuckAndroid: true,
-        playThroughEarpieceAndroid: false,
+      // Step 1: Detect face in the image
+      const faceDetection = await detectFace(imageData);
+      const faceDetected = faceDetection.success && faceDetection.data?.hasFace;
+
+      if (!faceDetected) {
+        setVerificationResult({
+          ...verificationResult,
+          faceDetected: false,
+          overall: false,
+          message: "No face detected in the image.",
+        });
+        setVerificationStep("failed");
+        return;
+      }
+
+      // Update partial result
+      setVerificationResult((prev) => ({
+        ...prev,
+        faceDetected: true,
+      }));
+
+      // Step 2: Match face with user's registered face
+      const faceMatch = await matchFace(imageData, userId);
+      const faceMatched = faceMatch.success && faceMatch.data?.matched;
+
+      // Step 3: Check liveness
+      const liveness = await checkLiveness(imageData);
+      const livenessConfirmed = liveness.success && liveness.data?.isLive;
+
+      // Step 4: Check for deepfake
+      const deepfake = await checkDeepfake(imageData);
+      const deepfakeDetected = deepfake.success && deepfake.data?.isDeepfake;
+
+      // Step 5: Verify speech
+      const speech = await verifySpeech(audioData, verificationPhrase);
+      const speechVerified = speech.success && speech.data?.matched;
+
+      // Final result
+      const overallResult =
+        faceDetected &&
+        faceMatched &&
+        livenessConfirmed &&
+        !deepfakeDetected &&
+        speechVerified;
+
+      setVerificationResult({
+        faceDetected,
+        faceMatched,
+        livenessConfirmed,
+        deepfakeDetected: !deepfakeDetected, // Inverse logic (true means no deepfake detected)
+        speechVerified,
+        overall: overallResult,
+        message: overallResult
+          ? "Verification successful"
+          : "Verification failed. Please try again.",
       });
 
-      // Create and start recording
-      const { recording: newRecording } = await Audio.Recording.createAsync(
-        Audio.RecordingOptionsPresets.HIGH_QUALITY
-      );
-      setRecording(newRecording);
-
-      // For demo purposes - simulate speech recognition after 3 seconds
-      // In a real app, you would send the audio to a speech recognition service
-      setTimeout(() => {
-        setSpeechDetected(true);
-
-        // Take a picture for deepfake analysis after speech is detected
-        if (cameraRef.current) {
-          setTimeout(async () => {
-            const photo = await cameraRef.current.takePictureAsync({
-              quality: 0.8,
-              base64: true,
-            });
-
-            // Here you would send the photo for deepfake detection
-            // analyzeFaceForDeepfake(photo);
-
-            // Check if we've met all verification conditions
-            if (faceDetected && speechDetected && livenessConfirmed) {
-              stopRecording();
-              setRecognitionStep("processing");
-
-              // Simulate the processing and completion
-              setTimeout(() => {
-                setRecognitionStep("complete");
-              }, 3000);
-            } else if (faceDetected && speechDetected) {
-              // If we're just waiting on liveness, give it a bit more time
-              setTimeout(() => {
-                // Simulate liveness confirmation if it hasn't happened naturally
-                setLivenessConfirmed(true);
-                stopRecording();
-                setRecognitionStep("processing");
-
-                setTimeout(() => {
-                  setRecognitionStep("complete");
-                }, 3000);
-              }, 2000);
-            }
-          }, 1000);
-        }
-      }, 3000);
+      setVerificationStep(overallResult ? "complete" : "failed");
     } catch (error) {
-      console.error("Recording error:", error);
-      Alert.alert("Error", "Failed to start recording");
+      console.error("Verification error:", error);
+      setVerificationResult({
+        ...verificationResult,
+        overall: false,
+        message: "An error occurred during verification.",
+      });
+      setVerificationStep("failed");
     }
   };
 
-  const stopRecording = async () => {
-    if (recording) {
-      try {
-        await recording.stopAndUnloadAsync();
-
-        // Get the recorded audio file
-        const uri = recording.getURI();
-        // Here you would typically send this audio to a speech recognition service
-        // processSpeechToText(uri);
-
-        // Reset audio mode
-        await Audio.setAudioModeAsync({
-          allowsRecordingIOS: false,
-          playsInSilentModeIOS: true,
-        });
-
-        setRecording(null);
-      } catch (error) {
-        console.error("Error stopping recording:", error);
-      }
-    }
+  const handleStartVerification = () => {
+    setVerificationStep("countdown");
+    setCountdown(3);
   };
 
-  const handleStartRecording = () => {
-    if (faceDetected) {
-      setRecognitionStep("countdown");
-    } else {
-      Alert.alert(
-        "Face Not Detected",
-        "Please position your face in the frame."
-      );
-    }
+  const handleRetry = () => {
+    setVerificationStep("initial");
+    setCountdown(3);
+    setCapturedImage(null);
+    setVerificationResult({
+      faceDetected: false,
+      faceMatched: false,
+      livenessConfirmed: false,
+      deepfakeDetected: false,
+      speechVerified: false,
+      overall: false,
+      message: "",
+    });
   };
 
-  const renderNoPermissions = () => {
-    return (
-      <View style={styles.noPermissionsContainer}>
-        <MaterialIcons name="no-photography" size={64} color="#D63B3B" />
-        <Text style={styles.noPermissionsText}>
-          Camera or microphone permissions not granted
-        </Text>
-        <TouchableOpacity
-          style={styles.continueButton}
-          onPress={() => router.back()}
-        >
-          <Text style={styles.continueButtonText}>Go Back</Text>
-        </TouchableOpacity>
-      </View>
-    );
+  const handleContactSupport = () => {
+    // Navigate to support screen
+    router.push("/support/live-agent");
   };
 
-  const renderCamera = () => {
-    return (
-      <View style={styles.cameraContainer}>
-        <Camera
-          ref={cameraRef}
-          style={styles.cameraView}
-          type={Camera.Constants.Type.front}
-          onFacesDetected={handleFacesDetected}
-          faceDetectorSettings={{
-            mode: FaceDetector.FaceDetectorMode.fast,
-            detectLandmarks: FaceDetector.FaceDetectorLandmarks.all,
-            runClassifications: FaceDetector.FaceDetectorClassifications.all,
-            minDetectionInterval: 100,
-            tracking: true,
-          }}
-        />
-
-        {/* Face framing guide - more modern and cleaner */}
-        <View style={styles.faceFrame}>
-          <Svg height="100%" width="100%" viewBox="0 0 100 100">
-            {/* Top left corner */}
-            <Path
-              d="M 10,10 L 10,25 M 10,10 L 25,10"
-              stroke="white"
-              strokeWidth="3"
-              fill="transparent"
-            />
-            {/* Top right corner */}
-            <Path
-              d="M 90,10 L 90,25 M 90,10 L 75,10"
-              stroke="white"
-              strokeWidth="3"
-              fill="transparent"
-            />
-            {/* Bottom left corner */}
-            <Path
-              d="M 10,90 L 10,75 M 10,90 L 25,90"
-              stroke="white"
-              strokeWidth="3"
-              fill="transparent"
-            />
-            {/* Bottom right corner */}
-            <Path
-              d="M 90,90 L 90,75 M 90,90 L 75,90"
-              stroke="white"
-              strokeWidth="3"
-              fill="transparent"
-            />
-          </Svg>
-        </View>
-
-        {/* Recording indicator */}
-        {recognitionStep === "recording" && (
-          <View style={styles.recordingIndicatorContainer}>
-            <View style={styles.recordingDot} />
-            <Text style={styles.recordingText}>Recording</Text>
-          </View>
-        )}
-      </View>
-    );
-  };
-
+  // Render screen content based on verification step
   const renderContent = () => {
-    switch (recognitionStep) {
+    switch (verificationStep) {
       case "initial":
         return (
           <View style={styles.instructionContainer}>
             <Text style={styles.instructionTitle}>
-              Position your face in the frame
+              Facial & Voice Verification
             </Text>
             <Text style={styles.instructionText}>
-              When ready, press the button and read the phrase below
+              Position your face in the frame and prepare to speak the following
+              phrase:
             </Text>
             <View style={styles.phraseContainer}>
-              <Text style={styles.phrase}>"{livenessPhrase}"</Text>
+              <Text style={styles.phrase}>"{verificationPhrase}"</Text>
             </View>
             <TouchableOpacity
-              style={[
-                styles.recordButton,
-                !faceDetected && styles.recordButtonDisabled,
-              ]}
-              disabled={!faceDetected}
-              onPress={handleStartRecording}
+              style={styles.startButton}
+              onPress={handleStartVerification}
             >
-              <View style={styles.recordButtonInner}>
-                <MaterialIcons name="mic" size={28} color="#fff" />
-              </View>
+              <Text style={styles.startButtonText}>Start Verification</Text>
             </TouchableOpacity>
-            <Text style={styles.buttonLabel}>
-              {faceDetected ? "Press to begin" : "Positioning face..."}
-            </Text>
           </View>
         );
 
@@ -313,11 +543,13 @@ const FacialRecognitionScreen = () => {
         return (
           <View style={styles.instructionContainer}>
             <Text style={styles.countdownText}>{countdown}</Text>
-            <Text style={styles.instructionText}>Get ready to speak</Text>
+            <Text style={styles.instructionText}>
+              Get ready to speak the phrase clearly
+            </Text>
           </View>
         );
 
-      case "recording":
+      case "capture":
         return (
           <View style={styles.instructionContainer}>
             <Text style={styles.instructionTitle}>Recording</Text>
@@ -325,76 +557,13 @@ const FacialRecognitionScreen = () => {
               Please read the phrase clearly
             </Text>
             <View style={styles.phraseContainer}>
-              <Text style={styles.phrase}>"{livenessPhrase}"</Text>
+              <Text style={styles.phrase}>"{verificationPhrase}"</Text>
             </View>
-            <View style={styles.statusContainer}>
-              <View style={styles.statusItem}>
-                <FontAwesome5
-                  name="user-check"
-                  size={18}
-                  color={faceDetected ? "#4CAF50" : "#999"}
-                  style={styles.statusIcon}
-                />
-                <Text
-                  style={[
-                    styles.statusText,
-                    faceDetected && styles.statusActive,
-                  ]}
-                >
-                  Face Detected
-                </Text>
-              </View>
-
-              <View style={styles.statusItem}>
-                <MaterialIcons
-                  name="record-voice-over"
-                  size={20}
-                  color={speechDetected ? "#4CAF50" : "#999"}
-                  style={styles.statusIcon}
-                />
-                <Text
-                  style={[
-                    styles.statusText,
-                    speechDetected && styles.statusActive,
-                  ]}
-                >
-                  Speech Recognized
-                </Text>
-              </View>
-
-              <View style={styles.statusItem}>
-                <MaterialIcons
-                  name="verified-user"
-                  size={20}
-                  color={livenessConfirmed ? "#4CAF50" : "#999"}
-                  style={styles.statusIcon}
-                />
-                <Text
-                  style={[
-                    styles.statusText,
-                    livenessConfirmed && styles.statusActive,
-                  ]}
-                >
-                  Liveness Confirmed
-                </Text>
-              </View>
-            </View>
-            <View style={styles.waveformContainer}>
-              {/* Audio waveform visualization */}
-              <View style={styles.waveform}>
-                {[...Array(20)].map((_, i) => (
-                  <View
-                    key={i}
-                    style={[
-                      styles.waveformBar,
-                      {
-                        height: Math.random() * 30 + 5,
-                        marginHorizontal: 2,
-                      },
-                    ]}
-                  />
-                ))}
-              </View>
+            <View style={styles.recordingIndicator}>
+              <View style={styles.recordingPulse} />
+              <Text style={styles.recordingText}>
+                Recording audio and video
+              </Text>
             </View>
           </View>
         );
@@ -404,11 +573,99 @@ const FacialRecognitionScreen = () => {
           <View style={styles.instructionContainer}>
             <Text style={styles.instructionTitle}>Processing</Text>
             <Text style={styles.instructionText}>
-              Verifying your identity and checking for deepfakes...
+              Verifying your identity...
             </Text>
-            <View style={styles.loadingIndicator}>
-              <View style={styles.loadingBar}>
-                <View style={styles.loadingProgress} />
+            <View style={styles.progressContainer}>
+              <View style={styles.progressItem}>
+                <Text style={styles.progressLabel}>Face Detection</Text>
+                <View style={styles.progressBar}>
+                  <View
+                    style={[
+                      styles.progressFill,
+                      {
+                        width: verificationResult.faceDetected ? "100%" : "30%",
+                      },
+                    ]}
+                  />
+                </View>
+                {verificationResult.faceDetected && (
+                  <Ionicons
+                    name="checkmark-circle"
+                    size={16}
+                    color="#4CAF50"
+                    style={styles.progressCheck}
+                  />
+                )}
+              </View>
+
+              <View style={styles.progressItem}>
+                <Text style={styles.progressLabel}>Face Matching</Text>
+                <View style={styles.progressBar}>
+                  <View
+                    style={[
+                      styles.progressFill,
+                      {
+                        width: verificationResult.faceMatched ? "100%" : "60%",
+                      },
+                    ]}
+                  />
+                </View>
+                {verificationResult.faceMatched && (
+                  <Ionicons
+                    name="checkmark-circle"
+                    size={16}
+                    color="#4CAF50"
+                    style={styles.progressCheck}
+                  />
+                )}
+              </View>
+
+              <View style={styles.progressItem}>
+                <Text style={styles.progressLabel}>Liveness Check</Text>
+                <View style={styles.progressBar}>
+                  <View
+                    style={[
+                      styles.progressFill,
+                      {
+                        width: verificationResult.livenessConfirmed
+                          ? "100%"
+                          : "40%",
+                      },
+                    ]}
+                  />
+                </View>
+                {verificationResult.livenessConfirmed && (
+                  <Ionicons
+                    name="checkmark-circle"
+                    size={16}
+                    color="#4CAF50"
+                    style={styles.progressCheck}
+                  />
+                )}
+              </View>
+
+              <View style={styles.progressItem}>
+                <Text style={styles.progressLabel}>Speech Verification</Text>
+                <View style={styles.progressBar}>
+                  <View
+                    style={[
+                      styles.progressFill,
+                      {
+                        width: verificationResult.speechVerified
+                          ? "100%"
+                          : "20%",
+                      },
+                    ]}
+                  />
+                </View>
+                {verificationResult.speechVerified && (
+                  <Ionicons
+                    name="checkmark-circle"
+                    size={16}
+                    color="#4CAF50"
+                    style={styles.progressCheck}
+                  />
+                )}
               </View>
             </View>
           </View>
@@ -426,11 +683,39 @@ const FacialRecognitionScreen = () => {
             </Text>
             <TouchableOpacity
               style={styles.continueButton}
-              onPress={() => router.push("/")}
+              onPress={() => router.push("/certificate-generated")}
             >
               <Text style={styles.continueButtonText}>Continue</Text>
               <Ionicons name="arrow-forward" size={20} color="#fff" />
             </TouchableOpacity>
+          </View>
+        );
+
+      case "failed":
+        return (
+          <View style={styles.instructionContainer}>
+            <View style={styles.failIcon}>
+              <Ionicons name="alert-circle" size={80} color="#D63B3B" />
+            </View>
+            <Text style={styles.instructionTitle}>Verification Failed</Text>
+            <Text style={styles.instructionText}>
+              {verificationResult.message ||
+                "We couldn't verify your identity. Please try again."}
+            </Text>
+            <View style={styles.buttonRow}>
+              <TouchableOpacity
+                style={styles.retryButton}
+                onPress={handleRetry}
+              >
+                <Text style={styles.retryButtonText}>Try Again</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.agentButton}
+                onPress={handleContactSupport}
+              >
+                <Text style={styles.agentButtonText}>Contact Support</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         );
 
@@ -439,16 +724,36 @@ const FacialRecognitionScreen = () => {
     }
   };
 
-  if (hasCameraPermission === null || hasAudioPermission === null) {
+  // Check permissions
+  if (cameraPermission === null || audioPermission === null) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.loadingText}>Requesting permissions...</Text>
-      </View>
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>Requesting permissions...</Text>
+        </View>
+      </SafeAreaView>
     );
   }
 
-  if (hasCameraPermission === false || hasAudioPermission === false) {
-    return renderNoPermissions();
+  // Handle permission denied
+  if (cameraPermission === false || audioPermission === false) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <Text style={styles.errorTitle}>Permission Denied</Text>
+          <Text style={styles.errorText}>
+            Camera and microphone permissions are required for identity
+            verification. Please enable them in your device settings.
+          </Text>
+          <TouchableOpacity
+            style={styles.continueButton}
+            onPress={() => router.back()}
+          >
+            <Text style={styles.continueButtonText}>Go Back</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
   }
 
   return (
@@ -460,16 +765,54 @@ const FacialRecognitionScreen = () => {
           style={styles.backButton}
           onPress={() => router.back()}
           disabled={
-            recognitionStep === "recording" || recognitionStep === "processing"
+            verificationStep === "capture" || verificationStep === "processing"
           }
         >
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Facial Verification</Text>
-        <View style={{ width: 40 }} />
+        <Text style={styles.headerTitle}>Identity Verification</Text>
+        <View style={styles.placeholderButton} />
       </View>
 
-      {renderCamera()}
+      <View style={styles.cameraFrame}>
+        {/* Show camera preview unless we're viewing the captured image */}
+        {!capturedImage ? (
+          <Camera
+            ref={cameraRef}
+            style={styles.cameraFeed}
+            type={CameraType.front}
+            onCameraReady={() => setIsCameraReady(true)}
+          />
+        ) : (
+          <Image
+            source={{ uri: capturedImage.uri }}
+            style={styles.cameraFeed}
+          />
+        )}
+
+        {/* Frame overlay */}
+        <View style={styles.frameBorder}>
+          <Svg
+            height="100%"
+            width="100%"
+            viewBox={`0 0 ${width * 0.8} ${width * 0.8}`}
+          >
+            <Rect
+              x="0"
+              y="0"
+              width={width * 0.8}
+              height={width * 0.8}
+              stroke="white"
+              strokeWidth="4"
+              fill="transparent"
+            />
+          </Svg>
+        </View>
+
+        {/* Recording indicator */}
+        {verificationStep === "capture" && <View style={styles.recordingDot} />}
+      </View>
+
       {renderContent()}
     </SafeAreaView>
   );
@@ -481,6 +824,28 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#1F245E",
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  loadingText: {
+    color: "#fff",
+    fontSize: 18,
+  },
+  errorTitle: {
+    color: "#fff",
+    fontSize: 22,
+    fontWeight: "700",
+    marginBottom: 10,
+  },
+  errorText: {
+    color: "#fff",
+    fontSize: 16,
+    textAlign: "center",
+    marginBottom: 20,
   },
   headerBar: {
     flexDirection: "row",
@@ -497,47 +862,36 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "600",
   },
-  cameraContainer: {
+  placeholderButton: {
+    width: 40,
+  },
+  cameraFrame: {
     width: width,
     height: width,
+    justifyContent: "center",
+    alignItems: "center",
     position: "relative",
     overflow: "hidden",
   },
-  cameraView: {
+  cameraFeed: {
     width: "100%",
     height: "100%",
   },
-  faceFrame: {
+  frameBorder: {
     position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    alignItems: "center",
-    justifyContent: "center",
+    top: width * 0.1, // Center the square frame
+    left: width * 0.1,
+    width: width * 0.8,
+    height: width * 0.8,
   },
-  recordingIndicatorContainer: {
+  recordingDot: {
     position: "absolute",
     top: 20,
     right: 20,
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.5)",
-    borderRadius: 16,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  recordingDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
     backgroundColor: "#D63B3B",
-    marginRight: 8,
-  },
-  recordingText: {
-    color: "#fff",
-    fontSize: 14,
-    fontWeight: "500",
   },
   instructionContainer: {
     flex: 1,
@@ -576,35 +930,23 @@ const styles = StyleSheet.create({
     color: "#1F245E",
     textAlign: "center",
   },
-  recordButton: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: "#D63B3B",
-    justifyContent: "center",
+  startButton: {
+    backgroundColor: "#1F245E",
+    borderRadius: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 40,
     alignItems: "center",
-    marginBottom: 10,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 5,
+    width: "100%",
   },
-  recordButtonDisabled: {
-    backgroundColor: "#D63B3B80",
-  },
-  recordButtonInner: {
-    width: 62,
-    height: 62,
-    borderRadius: 31,
-    backgroundColor: "#C12C2C",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  buttonLabel: {
-    fontSize: 14,
-    color: "#666",
-    marginBottom: 20,
+  startButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
   },
   countdownText: {
     fontSize: 72,
@@ -612,65 +954,55 @@ const styles = StyleSheet.create({
     color: "#1F245E",
     marginBottom: 16,
   },
-  statusContainer: {
-    width: "100%",
-    marginTop: 10,
-  },
-  statusItem: {
+  recordingIndicator: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 14,
-  },
-  statusIcon: {
-    marginRight: 12,
-  },
-  statusText: {
-    fontSize: 15,
-    color: "#999",
-  },
-  statusActive: {
-    color: "#333",
-    fontWeight: "500",
-  },
-  waveformContainer: {
     marginTop: 20,
-    width: "100%",
-    height: 50,
-    justifyContent: "center",
-    alignItems: "center",
   },
-  waveform: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    width: "100%",
-    height: 40,
-  },
-  waveformBar: {
-    width: 4,
+  recordingPulse: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
     backgroundColor: "#D63B3B",
-    borderRadius: 2,
-    opacity: 0.8,
+    marginRight: 8,
   },
-  loadingIndicator: {
+  recordingText: {
+    fontSize: 14,
+    color: "#666",
+  },
+  progressContainer: {
     width: "100%",
-    paddingHorizontal: 20,
     marginTop: 20,
   },
-  loadingBar: {
+  progressItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  progressLabel: {
+    fontSize: 14,
+    color: "#333",
+    width: 120,
+  },
+  progressBar: {
+    flex: 1,
     height: 8,
-    width: "100%",
     backgroundColor: "#F0F0F0",
     borderRadius: 4,
     overflow: "hidden",
   },
-  loadingProgress: {
+  progressFill: {
     height: "100%",
-    width: "70%",
     backgroundColor: "#4CAF50",
     borderRadius: 4,
   },
+  progressCheck: {
+    marginLeft: 8,
+  },
   successIcon: {
+    marginBottom: 20,
+  },
+  failIcon: {
     marginBottom: 20,
   },
   continueButton: {
@@ -690,24 +1022,38 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     marginRight: 8,
   },
-  noPermissionsContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 20,
-    backgroundColor: "#fff",
-  },
-  noPermissionsText: {
-    fontSize: 18,
-    textAlign: "center",
+  buttonRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
     marginTop: 20,
-    marginBottom: 30,
-    color: "#333",
   },
-  loadingText: {
+  retryButton: {
+    flex: 1,
+    backgroundColor: "#1F245E",
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: "center",
+    marginRight: 8,
+  },
+  retryButtonText: {
     color: "#fff",
-    fontSize: 18,
-    textAlign: "center",
-    marginTop: 50,
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  agentButton: {
+    flex: 1,
+    backgroundColor: "#fff",
+    borderColor: "#1F245E",
+    borderWidth: 2,
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: "center",
+    marginLeft: 8,
+  },
+  agentButtonText: {
+    color: "#1F245E",
+    fontSize: 16,
+    fontWeight: "600",
   },
 });

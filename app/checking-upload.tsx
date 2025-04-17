@@ -1,3 +1,4 @@
+import { useRouter } from "expo-router";
 import React, { useEffect, useRef } from "react";
 import {
   View,
@@ -11,6 +12,8 @@ import {
 const { width, height } = Dimensions.get("window");
 
 const ApprovalPendingScreen = () => {
+  const router = useRouter();
+
   const dot1 = useRef(new Animated.Value(0)).current;
   const dot2 = useRef(new Animated.Value(0)).current;
   const dot3 = useRef(new Animated.Value(0)).current;
@@ -37,6 +40,19 @@ const ApprovalPendingScreen = () => {
     animate(dot1, 0);
     animate(dot2, 200);
     animate(dot3, 400);
+
+    // ⏳ Simulate backend processing
+    const timer = setTimeout(() => {
+      const uploadSuccess = Math.random() < 0.85; // 85% success rate for realism
+
+      if (uploadSuccess) {
+        router.replace("/loading-success");
+      } else {
+        router.replace("/upload-error");
+      }
+    }, 3500); // Adjust timing as needed
+
+    return () => clearTimeout(timer);
   }, []);
 
   return (

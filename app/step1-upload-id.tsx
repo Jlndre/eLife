@@ -136,17 +136,17 @@ const UploadPhotoIDScreen = () => {
         )}
       </View>
 
-      <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+      <TouchableOpacity
+        style={styles.backButton}
+        onPress={() => router.push("/StartProcess")}
+      >
         <Text style={styles.backButtonText}>Go back</Text>
       </TouchableOpacity>
 
       {file && (
         <TouchableOpacity
           style={styles.nextButton}
-          onPress={() => {
-            // Navigate to next screen (adjust the route to your setup)
-            router.push("/"); // Replace with your next route
-          }}
+          onPress={() => router.push("/checking-upload")}
         >
           <Text style={styles.nextButtonText}>Next</Text>
         </TouchableOpacity>

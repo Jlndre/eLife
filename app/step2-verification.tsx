@@ -20,7 +20,7 @@ const Step2VerificationScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.headerSection}>
-        <Text style={styles.stepTitle}>Step 2: Verification</Text>
+        <Text style={styles.stepTitle}>Step 2: Facial Verification</Text>
         <Text style={styles.instruction}>
           We need to verify your identity to complete the process.
         </Text>
@@ -80,7 +80,7 @@ const Step2VerificationScreen = () => {
 
         <TouchableOpacity
           style={styles.verificationButton}
-          onPress={() => router.push("/")}
+          onPress={() => router.push("/facial-record")}
         >
           <FontAwesome5
             name="user-shield"

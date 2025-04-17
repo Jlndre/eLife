@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 import {
   View,
   Text,
@@ -7,14 +7,14 @@ import {
   Image,
   ImageBackground,
   TouchableOpacity,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { StatusBar } from 'expo-status-bar';
-import { MaterialIcons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { StatusBar } from "expo-status-bar";
+import { MaterialIcons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 
-const screenWidth = Dimensions.get('window').width;
-const screenHeight = Dimensions.get('window').height;
+const screenWidth = Dimensions.get("window").width;
+const screenHeight = Dimensions.get("window").height;
 
 export default function ProofStepsScreen() {
   const router = useRouter();
@@ -23,7 +23,7 @@ export default function ProofStepsScreen() {
     <>
       <StatusBar style="light" translucent backgroundColor="transparent" />
       <ImageBackground
-        source={require('../assets/images/intermediary.png')}
+        source={require("../assets/images/intermediary.png")}
         style={styles.backgroundImage}
         resizeMode="cover"
       >
@@ -31,7 +31,7 @@ export default function ProofStepsScreen() {
           {/* Sleek Back Button */}
           <TouchableOpacity
             style={styles.backButton}
-            onPress={() => router.replace('/(tabs)/Dashboard')}
+            onPress={() => router.replace("/(tabs)/Dashboard")}
             activeOpacity={0.7}
           >
             <MaterialIcons name="arrow-back" size={28} color="#0B1741" />
@@ -40,7 +40,7 @@ export default function ProofStepsScreen() {
           <View style={styles.contentContainer}>
             {/* Logo */}
             <Image
-              source={require('../assets/images/elife-trans.png')}
+              source={require("../assets/images/elife-trans.png")}
               style={styles.logo}
               resizeMode="contain"
             />
@@ -52,8 +52,8 @@ export default function ProofStepsScreen() {
             <View style={styles.stepContainer}>
               <Text style={styles.stepTitle}>Step 1: Upload a Valid ID</Text>
               <Text style={styles.stepDesc}>
-                Submit a valid form of identification such as your Driver's License,
-                Passport, NIDS or Electoral ID.
+                Submit a valid form of identification such as your Driver's
+                License, Passport, NIDS or Electoral ID.
               </Text>
               <Text style={styles.stepSubtext}>
                 Accepted file formats: PNG, JPG, JPEG.
@@ -64,9 +64,9 @@ export default function ProofStepsScreen() {
             <View style={styles.stepContainer}>
               <Text style={styles.stepTitle}>Step 2: Facial Verification</Text>
               <Text style={styles.stepDesc}>
-                Ensure you're in a well-lit space, dressed appropriately, and in front
-                of a plain background. This step includes a face scan using our
-                secure AI system.
+                Ensure you're in a well-lit space, dressed appropriately, and in
+                front of a plain background. This step includes a face scan
+                using our secure AI system.
               </Text>
               <Text style={styles.stepDesc}>
                 You'll also join a secure Zoom call with an AGD agent for final
@@ -75,7 +75,11 @@ export default function ProofStepsScreen() {
             </View>
 
             {/* Proceed Button */}
-            <TouchableOpacity style={styles.proceedBtn} activeOpacity={0.8}>
+            <TouchableOpacity
+              style={styles.proceedBtn}
+              activeOpacity={0.8}
+              onPress={() => router.push("/upload-id")}
+            >
               <Text style={styles.proceedText}>I'm Ready to Begin</Text>
             </TouchableOpacity>
           </View>
@@ -95,7 +99,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   backButton: {
-    position: 'absolute',
+    position: "absolute",
     top: 16,
     left: 16,
     zIndex: 1,
@@ -111,57 +115,57 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 60,
     paddingBottom: 24,
-    justifyContent: 'flex-start',
+    justifyContent: "flex-start",
   },
   logo: {
     width: 130,
     height: 130,
-    alignSelf: 'center',
+    alignSelf: "center",
     marginBottom: 30,
   },
   header: {
     fontSize: 30,
-    fontWeight: 'bold',
-    color: '#0B1741',
+    fontWeight: "bold",
+    color: "#0B1741",
     marginBottom: 59,
-    textAlign: 'left',
+    textAlign: "left",
   },
   stepContainer: {
     marginBottom: 18,
   },
   stepTitle: {
     fontSize: 25,
-    fontWeight: '700',
-    color: '#1F245E',
+    fontWeight: "700",
+    color: "#1F245E",
     marginBottom: 8,
   },
   stepDesc: {
     fontSize: 15,
-    color: '#444',
+    color: "#444",
     lineHeight: 22,
     marginBottom: 6,
   },
   stepSubtext: {
     fontSize: 14,
-    color: '#666',
-    fontStyle: 'italic',
+    color: "#666",
+    fontStyle: "italic",
     marginTop: 4,
   },
   proceedBtn: {
-    backgroundColor: '#1F245E',
+    backgroundColor: "#1F245E",
     paddingVertical: 14,
     borderRadius: 10,
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: 70,
     elevation: 3,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
   },
   proceedText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 17,
-    fontWeight: '600',
+    fontWeight: "600",
   },
 });
