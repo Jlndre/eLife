@@ -35,7 +35,7 @@ export default function HomeScreen() {
 
   const handleProofOfLifePress = () => {
     if (!isCurrentQuarterCompleted) {
-      router.push("/ProofStepScreen");
+      router.push("/StartProcess");
     } else {
       Alert.alert(
         "No Verification Needed",

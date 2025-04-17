@@ -46,7 +46,7 @@ const ApprovalPendingScreen = () => {
       const uploadSuccess = Math.random() < 0.85; // 85% success rate for realism
 
       if (uploadSuccess) {
-        router.replace("/loading-success");
+        router.replace("/upload-success");
       } else {
         router.replace("/upload-error");
       }

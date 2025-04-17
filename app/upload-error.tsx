@@ -57,7 +57,7 @@ const UploadErrorScreen = () => {
 
       <TouchableOpacity
         style={styles.tryAgainButton}
-        onPress={() => router.replace("/upload-id")}
+        onPress={() => router.replace("/step1-upload-id")}
       >
         <Text style={styles.tryAgainText}>Please Try Again</Text>
       </TouchableOpacity>

@@ -34,7 +34,7 @@ const UploadSuccessScreen = () => {
         easing: Easing.out(Easing.exp),
       }),
     ]).start(() => {
-      // 👇 Show button after animation completes
+      // Show button after animation completes
       setTimeout(() => setShowButton(true), 500);
     });
   }, []);
@@ -56,7 +56,7 @@ const UploadSuccessScreen = () => {
       {showButton && (
         <TouchableOpacity
           style={styles.nextButton}
-          onPress={() => router.push("/facial-record")}
+          onPress={() => router.push("/step2-verification")}
         >
           <Text style={styles.nextButtonText}>Next</Text>
         </TouchableOpacity>

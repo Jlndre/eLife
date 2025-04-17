@@ -78,7 +78,7 @@ export default function ProofStepsScreen() {
             <TouchableOpacity
               style={styles.proceedBtn}
               activeOpacity={0.8}
-              onPress={() => router.push("/upload-id")}
+              onPress={() => router.push("/step1-upload-id")}
             >
               <Text style={styles.proceedText}>I'm Ready to Begin</Text>
             </TouchableOpacity>
